@@ -138,7 +138,7 @@
         "        </div>\n" +
         "    </section>\n" +
         "</div>";
-        
+
     var myData;
 
 
@@ -243,7 +243,7 @@
             menu.classList.remove(activeClassName);
         }
     }
-    //if user left clicks anywhere then we turn our context menu off 
+    //if user left clicks anywhere then turn our context menu off, if user clicks on note element we pop up update box 
     function clickListener() {
         document.addEventListener("click", function (e) {
 
@@ -256,8 +256,13 @@
                 //display context menu
                 toggleMenuOff();
                 positionMenu(e);
-                currentElementId = e.path[1].id;
-                console.log(currentElementId);
+                if(e.path[1].id){
+                    currentElementId = e.path[1].id;
+                }
+                else{
+                    currentElementId = e.path[2].id;
+                }
+                
                 onUpdateNoteClick();
             }
         });
