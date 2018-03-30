@@ -1,0 +1,13 @@
+.context-menu {
+    display: none;
+    position: absolute;
+    z-index: 10;
+  }
+  
+  .context-menu--active {
+    display: block;
+  }
+  .context-menu li a{
+      width: 100px;
+      height: 20px;
+  }
