@@ -9,8 +9,9 @@
             // Private methods and variables
             var data;
             if (localStorage.getItem('data')) {
-                //localStorage only supports strings. Using JSON.stringify() and JSON.parse().
+                //localStorage only supports strings.So, using JSON.stringify() and JSON.parse() to convert to string.
                 data = JSON.parse(localStorage.getItem('data'));
+                //if localStorage is empty then we set the variable and empty array
             } else {
                 data = [];
             };
@@ -60,7 +61,7 @@
     }
 
 
-    //variable for data layer
+    //variables for data layer
     var storage;
 
     //variables for controller
@@ -81,18 +82,18 @@
     var draggedElement = null;
     var draggedElementInnerHTML = null;
 
-
+    //loads data from localstorage to variable DATA
     function loadNotes() {
         var tempNoteData = storage.getData();
         for (var i = 0; i < tempNoteData.length; i++) {
             DATA[i] = noteFactory(tempNoteData[i].title, tempNoteData[i].content);
         }
-        //if local storage is empty, DATA variable remains an empty Array.
+        
     }
 
-    //for determining which element has been right clicked upon
+    //to determine if right clicked element is the element we are concerned with adding custom context menu
     function clickInsideElement(e, className) {
-        var el = e.srcElement // || e.target; //extracting right clicked element
+        var el = e.srcElement //extracting right clicked element
         //check if element has class attribute 'note', if not then the element doesn't require our custom context menu
         if (el.classList.contains(className)) {
             return el;
@@ -129,6 +130,7 @@
         }
     }
 
+    //adding listener for our context menu in our document    
     function contextListener() {
         document.addEventListener("contextmenu", function (e) {
             //check if element has class attribute 'note'
@@ -138,8 +140,6 @@
                 toggleMenuOn();
                 positionMenu(e);
                 currentElementId = e.path[0].id;
-
-
             } else {
                 //don't display context menu
                 toggleMenuOff();
@@ -162,7 +162,7 @@
             menu.classList.remove(activeClassName);
         }
     }
-    //for regular click events
+    //if user left clicks anywhere then we turn our context menu off 
     function clickListener() {
         document.addEventListener("click", function (e) {
             var button = e.which || e.button;
@@ -172,10 +172,12 @@
         });
     }
 
+    //listener for delete button which pops up after context menu    
     function deleteListener() {
         var deleteButton = document.getElementById('delete-button');
         deleteButton.addEventListener('click', function () {
             console.log('delete');
+            //currentElementId is previously set by our context listener when we right click the note element
             DATA.splice(currentElementId, 1);
             //saving to local storage after delete
             storage.setData(DATA);
@@ -184,7 +186,8 @@
             dragAndDropListener();
         });
     }
-
+    
+    //adding drag and drop listenere to note elements
     function dragAndDropListener() {
         if (document.querySelectorAll(".note")) {
             noteList = document.querySelectorAll(".note");
@@ -212,7 +215,6 @@
     }
     function onDragStart(e) {
         currentElementId = e.path[0].id;
-        console.log(currentElementId);
         e.dataTransfer.setData('innerHTML', this.innerHTML);
         e.dataTransfer.setData('id', currentElementId);
         draggedElement = this;
