@@ -1,6 +1,6 @@
 (function () {
     /* Singleton design
-        for Data Layer
+        for local storage Layer
     */
     var MyStorage = (function () {
         // Instance stores a reference to the Singleton
@@ -56,27 +56,92 @@
         return temp;
     }
 
-    var html = "<div class=\"modal-container\">\n" +
-            "    <section class=\"create-modal\">\n" +
-            "        <div class=\"form-group title\">\n" +
-            "            <label class=\"sr-only\">Title</label>\n" +
-            "            <input id=\"title\" type=\"text\" placeholder=\"Title...\" class=\"form-control\">\n" +
-            "        </div>\n" +
-            "        <div class=\"form-group\">\n" +
-            "            <label class=\"sr-only\">Content</label>\n" +
-            "            <textarea id=\"content\" type=\"text\" placeholder=\"Content...\" class=\"form-control\"></textarea>\n" +
-            "        </div>\n" +
-            "        <div class=\"form-group action-btn\">\n" +
-            "            <button class=\"btn btn-primary \" id='cancel-button'>Cancel</button>\n" +
-            "            <button class=\"btn btn-primary\" id='save-button'>Save</button>\n" +
-            "        </div>\n" +
-            "    </section>\n" +
-            "</div>";
+    
     //variables for data layer
     var storage;
-
+    
     //variables for controller
     var DATA = [];
+    
+//Data Layer
+    var MyData = (function () {
+        // Instance stores a reference to the Singleton
+        var instance;
+        function init() {
+            // Private methods and variables
+            var DATA = [];
+
+            function setData(data){
+                DATA = data;
+            }
+
+            function addData(obj) {
+                DATA.push(obj);
+                saveData();
+            }
+            function updateData(obj, index) {
+                DATA[index] = obj;
+                saveData();
+            }
+            function deleteData(index){
+                DATA.splice(index, 1);
+                saveData();
+            }
+            function saveData(){
+                storage.setData(DATA);
+            }
+            return {
+                // Public methods and variables
+                setData: function(data){
+                    setData(data);
+                },
+                getData: function () {
+                    return DATA;
+                },
+                addData: function (obj) {
+                    addData(obj);
+                },
+                updateData: function (obj, index) {
+                    updateData(obj, index);
+                },
+                deleteData: function(index){
+                    deleteData(index);
+                },
+                getDataById: function(id){
+                    return DATA[id];
+                }
+            };
+        };
+        return {
+            getInstance: function () {
+                if (!instance) {
+                    instance = init();
+                }
+                return instance;
+            }
+        };
+    })();
+
+    var html = "<div class=\"modal-container\">\n" +
+        "    <section class=\"create-modal\">\n" +
+        "        <div class=\"form-group title\">\n" +
+        "            <label class=\"sr-only\">Title</label>\n" +
+        "            <input id=\"title\" type=\"text\" placeholder=\"Title...\" class=\"form-control\">\n" +
+        "        </div>\n" +
+        "        <div class=\"form-group\">\n" +
+        "            <label class=\"sr-only\">Content</label>\n" +
+        "            <textarea id=\"content\" type=\"text\" placeholder=\"Content...\" class=\"form-control\"></textarea>\n" +
+        "        </div>\n" +
+        "        <div class=\"form-group action-btn\">\n" +
+        "            <button class=\"btn btn-primary \" id='cancel-button'>Cancel</button>\n" +
+        "            <button class=\"btn btn-primary\" id='save-button'>Save</button>\n" +
+        "        </div>\n" +
+        "    </section>\n" +
+        "</div>";
+        
+    var myData;
+
+
     var noteList; //contains all elements with class attribute = note
     var noteContainer = document.querySelector(".note-container");
 
@@ -95,11 +160,7 @@
 
     //loads data from localstorage to variable DATA
     function loadNotes() {
-        var tempNoteData = storage.getData();
-        for (var i = 0; i < tempNoteData.length; i++) {
-            DATA[i] = noteFactory(tempNoteData[i].title, tempNoteData[i].content);
-        }
-        
+      myData.setData(storage.getData());
     }
 
     //to determine if right clicked element is the element we are concerned with adding custom context menu
@@ -150,7 +211,16 @@
                 //display context menu
                 toggleMenuOn();
                 positionMenu(e);
-                currentElementId = e.path[0].id;
+                //extracting element id regardless of where user clicks in the target
+                if(e.path[1].id){
+                    currentElementId = e.path[1].id;
+                }
+                else{
+                    currentElementId = e.path[2].id;
+                }
+                
+                console.log(currentElementId);
+                
             } else {
                 //don't display context menu
                 toggleMenuOff();
@@ -176,7 +246,7 @@
     //if user left clicks anywhere then we turn our context menu off 
     function clickListener() {
         document.addEventListener("click", function (e) {
-            
+
             var button = e.which || e.button;
             if (button === 1) {
                 toggleMenuOff();
@@ -196,18 +266,16 @@
     //listener for delete button which pops up after context menu    
     function deleteListener() {
         var deleteButton = document.getElementById('delete-button');
-        deleteButton.addEventListener('click', function () {
-            console.log('delete');
+        deleteButton.addEventListener('click', function (e) {
+            loadNotes()
             //currentElementId is previously set by our context listener when we right click the note element
-            DATA.splice(currentElementId, 1);
-            //saving to local storage after delete
-            storage.setData(DATA);
+            myData.deleteData(currentElementId);
             clearNotes();
             renderNotes();
             dragAndDropListener();
         });
     }
-    
+
     //adding drag and drop listenere to note elements
     function dragAndDropListener() {
         if (document.querySelectorAll(".note")) {
@@ -237,7 +305,6 @@
     function onDragStart(e) {
         currentElementId = e.path[0].id;
         e.dataTransfer.setData('innerHTML', this.innerHTML);
-       // e.dataTransfer.setData('id', currentElementId);
         draggedElement = this;
 
     }
@@ -260,11 +327,14 @@
             draggedElement.innerHTML = this.innerHTML;
             //innerHTML of drag element is assignment to this drop element
             this.innerHTML = e.dataTransfer.getData('innerHTML');
-            var tempdata = DATA[droppedElementId];
-            DATA[droppedElementId] = DATA[currentElementId];
-            DATA[currentElementId] = tempdata;
-            storage.setData(DATA);
-
+            
+            var dropData = myData.getDataById(droppedElementId);
+            console.log(dropData);
+            var dragData = myData.getDataById(currentElementId);
+            myData.updateData(dragData,droppedElementId);
+            myData.updateData(dropData,currentElementId);
+            currentElementId = null;
+            loadNotes();
         }
     }
     function positionMenu(e) {
@@ -282,6 +352,7 @@
 
     }
     function renderNotes() {
+        var DATA = myData.getData();
         if (DATA == null) {
             return;
         }
@@ -312,20 +383,18 @@
         document.getElementById('cancel-button').addEventListener('click', function () {
             document.getElementById('modal-container').innerHTML = "";
         });
-        document.getElementById('title').value=DATA[currentElementId].title;
-        document.getElementById('content').value=DATA[currentElementId].content;
+        document.getElementById('title').value = myData.getDataById(currentElementId).title;
+        document.getElementById('content').value = myData.getDataById(currentElementId).content;
         document.getElementById('save-button').addEventListener('click', function () {
-           // console.log(currentElementId);
+            // console.log(currentElementId);
             var title = document.getElementById('title').value;
             var content = document.getElementById('content').value;
             var updateNote = {
                 'title': title,
                 'content': content
             };
-            //adding new Note to DATA
-            DATA[currentElementId] = (updateNote);
-            //saving modified DATA to storage
-            storage.setData(DATA);
+            myData.updateData(updateNote, currentElementId);
+            
             //refreshing presentation layer by deleting old and creating new note list
             clearNotes();
             renderNotes();
@@ -348,10 +417,7 @@
                 'title': title,
                 'content': content
             };
-            //adding new Note to DATA
-            DATA.push(newNote);
-            //saving modified DATA to storage
-            storage.setData(DATA);
+            myData.addData(newNote);
             //refreshing presentation layer by deleting old and creating new note list
             clearNotes();
             renderNotes();
@@ -363,9 +429,11 @@
     }
 
     function main() {
-        //initialize datalayer
+        //initialize storage layer
         storage = MyStorage.getInstance();
-        //get data from datalayer and put it in controller variable
+        //initialize data layer
+        myData = MyData.getInstance();
+        //get data from storage layer and put it in data layer
         loadNotes();
         //register various listeners
         contextListener();
@@ -374,6 +442,8 @@
         renderNotes();
         deleteListener();
         dragAndDropListener();
+       
+        console.log(myData.getData());
     }
     main();
 })();

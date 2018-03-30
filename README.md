@@ -1,5 +1,16 @@
 # Sticky-notes
 
+Local Storage Layer
+MyStorage Singleton is created to deal with Local Storage only. It provides methods for fetching or saving bulk data to the local storage.
+
+Data Layer
+MyData Singleton is used to handle data for controller layer. CRUD operations can be performed conviniently. The MyData Singleton also updates local storage as each CRUD operation is performed.
+
+
+
+
+
+
 Process of solving tasks, issues faced and the way you tackled them should be documented.
 
 Drag and Drop feature
