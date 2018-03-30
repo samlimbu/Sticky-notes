@@ -7,11 +7,7 @@ Data Layer
 MyData Singleton is used to handle data for controller layer. CRUD operations can be performed conviniently. The MyData Singleton also updates local storage as each CRUD operation is performed.
 
 
-
-
-
-
-Process of solving tasks, issues faced and the way you tackled them should be documented.
+Issues faced
 
 Drag and Drop feature
 
