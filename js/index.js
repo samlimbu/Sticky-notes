@@ -11,8 +11,8 @@
             if (localStorage.getItem('data')) {
                 //localStorage only supports strings.So, using JSON.stringify() and JSON.parse() to convert to string.
                 data = JSON.parse(localStorage.getItem('data'));
-                //if localStorage is empty then we set the variable and empty array
             } else {
+                //if localStorage is empty then we set the variable an empty array
                 data = [];
             };
 
@@ -40,10 +40,6 @@
             }
         };
     })();
-
-
-
-
     /*Factory design
     for creating many note objects
     */
@@ -60,7 +56,22 @@
         return temp;
     }
 
-
+    var html = "<div class=\"modal-container\">\n" +
+            "    <section class=\"create-modal\">\n" +
+            "        <div class=\"form-group title\">\n" +
+            "            <label class=\"sr-only\">Title</label>\n" +
+            "            <input id=\"title\" type=\"text\" placeholder=\"Title...\" class=\"form-control\">\n" +
+            "        </div>\n" +
+            "        <div class=\"form-group\">\n" +
+            "            <label class=\"sr-only\">Content</label>\n" +
+            "            <textarea id=\"content\" type=\"text\" placeholder=\"Content...\" class=\"form-control\"></textarea>\n" +
+            "        </div>\n" +
+            "        <div class=\"form-group action-btn\">\n" +
+            "            <button class=\"btn btn-primary \" id='cancel-button'>Cancel</button>\n" +
+            "            <button class=\"btn btn-primary\" id='save-button'>Save</button>\n" +
+            "        </div>\n" +
+            "    </section>\n" +
+            "</div>";
     //variables for data layer
     var storage;
 
@@ -165,9 +176,19 @@
     //if user left clicks anywhere then we turn our context menu off 
     function clickListener() {
         document.addEventListener("click", function (e) {
+            
             var button = e.which || e.button;
             if (button === 1) {
                 toggleMenuOff();
+            }
+            if (clickInsideElement(e, noteItemClassName)) {
+                e.preventDefault();
+                //display context menu
+                toggleMenuOff();
+                positionMenu(e);
+                currentElementId = e.path[1].id;
+                console.log(currentElementId);
+                onUpdateNoteClick();
             }
         });
     }
@@ -216,7 +237,7 @@
     function onDragStart(e) {
         currentElementId = e.path[0].id;
         e.dataTransfer.setData('innerHTML', this.innerHTML);
-        e.dataTransfer.setData('id', currentElementId);
+       // e.dataTransfer.setData('id', currentElementId);
         draggedElement = this;
 
     }
@@ -233,8 +254,11 @@
         if (e.stopPropagation) {
             e.stopPropagation(); // stops the browser from redirecting.
         }
+        //dragged element can't be dropped on itself
         if (draggedElement != this) {
+            //innerHTML of drop element is assignment to this drag element
             draggedElement.innerHTML = this.innerHTML;
+            //innerHTML of drag element is assignment to this drop element
             this.innerHTML = e.dataTransfer.getData('innerHTML');
             var tempdata = DATA[droppedElementId];
             DATA[droppedElementId] = DATA[currentElementId];
@@ -283,25 +307,35 @@
         noteContainer.insertAdjacentElement('beforeend', div);
     }
 
+    function onUpdateNoteClick() {
+        document.getElementById('modal-container').innerHTML = html;
+        document.getElementById('cancel-button').addEventListener('click', function () {
+            document.getElementById('modal-container').innerHTML = "";
+        });
+        document.getElementById('title').value=DATA[currentElementId].title;
+        document.getElementById('content').value=DATA[currentElementId].content;
+        document.getElementById('save-button').addEventListener('click', function () {
+           // console.log(currentElementId);
+            var title = document.getElementById('title').value;
+            var content = document.getElementById('content').value;
+            var updateNote = {
+                'title': title,
+                'content': content
+            };
+            //adding new Note to DATA
+            DATA[currentElementId] = (updateNote);
+            //saving modified DATA to storage
+            storage.setData(DATA);
+            //refreshing presentation layer by deleting old and creating new note list
+            clearNotes();
+            renderNotes();
+            //adding drag and drop listener to note elements
+            dragAndDropListener();
+            document.getElementById('modal-container').innerHTML = "";
+        });
 
+    }
     function onCreateNoteClick() {
-
-        var html = "<div class=\"modal-container\">\n" +
-            "    <section class=\"create-modal\">\n" +
-            "        <div class=\"form-group title\">\n" +
-            "            <label class=\"sr-only\">Title</label>\n" +
-            "            <input id=\"title\" type=\"text\" placeholder=\"Title...\" class=\"form-control\">\n" +
-            "        </div>\n" +
-            "        <div class=\"form-group\">\n" +
-            "            <label class=\"sr-only\">Content</label>\n" +
-            "            <textarea id=\"content\" type=\"text\" placeholder=\"Content...\" class=\"form-control\"></textarea>\n" +
-            "        </div>\n" +
-            "        <div class=\"form-group action-btn\">\n" +
-            "            <button class=\"btn btn-primary \" id='cancel-button'>Cancel</button>\n" +
-            "            <button class=\"btn btn-primary\" id='save-button'>Save</button>\n" +
-            "        </div>\n" +
-            "    </section>\n" +
-            "</div>";
         document.getElementById('modal-container').innerHTML = html;
         document.getElementById('cancel-button').addEventListener('click', function () {
             document.getElementById('modal-container').innerHTML = "";
